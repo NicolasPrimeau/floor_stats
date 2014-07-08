@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+
+import sys,urllib2,os,time
+
+city = "vancouver"
+url = "http://skyscraperpage.com/cities/?cityID=1&offset=0&type=all"
+offset = 0
+limit = 935
+while offset<limit:
+  temp = url.split("&")
+  for l in temp:
+    if "offset" in l:
+      y = "offset="+str(offset)
+      temp[temp.index(l)] = y
+      break
+  url = "&".join(temp)
+  print url
+  try:
+    response = urllib2.urlopen(url)
+    html = response.read()
+    if not os.path.isdir("./"+city):
+      os.makedirs("./"+city)
+    f = open("./"+city+"/index_"+str(offset)+"-"+str(offset+99)+".html", "w")
+    f.write(html)
+    f.close()
+  except urllib2.URLError:
+    print ("Error catched")
+    break
+  offset += 100
+  time.sleep(5)
+

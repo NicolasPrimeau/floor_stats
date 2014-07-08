@@ -1,0 +1,158 @@
+#!/usr/bin/env python
+
+import urllib2,sys
+from glob import glob
+##url = "http://skyscraperpage.com/cities/?cityID=60&offset=0&type=all"
+def normalize(name,n):
+  try:
+    name = str(name)
+  except:
+    pass
+  n = n-len(name)
+  while n >0:
+    if n %2 == 1:
+      name +=" " 
+    elif n%2 == 0:
+      name = " "+name
+    n -= 1
+  return name
+
+bldgs = []
+line_cnt = 0
+mask = 0
+city = ""
+i = 1 
+while i < len(sys.argv):
+  #city
+  if(sys.argv[i] == "-c" and i+1<len(sys.argv)):
+    i+=1
+    city = sys.argv[i].lower()
+  #height mask
+  elif(sys.argv[i] == "-m" and i+1<len(sys.argv)):
+    i+=1 
+    mask = int(sys.argv[i])
+  else:
+    print ("Invalid argument, exiting")
+    sys.exit()
+  i+=1
+
+if city == "":
+  sys.stderr.write("Please give a city"+"\n")
+  sys.exit()
+
+for page in glob("./"+city+"/index*"):
+
+  lines = "".join([l.strip("\n") for l in open(page)])
+  response = ""
+  b_cnt = -1
+
+  #try:
+  #  response = urllib2.urlopen(url)
+  #  html = response.read()
+  #except urllib2.URLError:
+  #  print ("Error catched")
+
+  html = lines
+  html = ["<" + l for l in html.split("<")]
+  html = filter(None, html)
+
+  i=0
+  flag = False
+
+  for l in html:
+    if "class=\"bhu\"" in l and "buildingID=" in l:
+      line_cnt +=1
+      i = 0
+      flag= True
+      temp = {}
+      temp['name'] = l.split(">")[1].split("<")[0]
+    elif i == 5 and flag:
+      temp['floors'] = l.split(">")[1].split("<")[0]
+    elif i == 10 and flag:
+      temp['status'] = l.split(">")[1].split("<")[0]
+    elif i == 15 and flag:
+      temp['year'] = l.split(">")[1].split("<")[0]
+      flag = False
+      bldgs.append(temp) 
+    elif "Listing" in l and "buildings" in l and b_cnt == -1:
+      b_cnt = l.split(">")[1].split("<")[0].split(" ")[-2]
+      b_cnt = int(b_cnt)      
+    if flag:
+      i+=1
+    
+    if line_cnt > b_cnt and b_cnt != -1:
+      break
+  if line_cnt > b_cnt and b_cnt != -1:
+    break
+
+
+avgs = {}
+time = 1850
+x = time
+while x < 2020:
+  avgs[str(x)] = {}
+  avgs[str(x)]['decade'] = str(x)+"'s"
+  avgs[str(x)]['values'] = []
+  avgs[str(x)]['avg'] = "No data"
+  avgs[str(x)]['std'] = "No data"
+  avgs[str(x)]['med'] = "No data"
+  avgs[str(x)]['max'] = "No data"
+  avgs[str(x)]['min'] = "No data"
+  avgs[str(x)]['sample'] = []
+  avgs[str(x)]['sample_size'] = "No data"
+  x += 10
+
+for bld in bldgs:
+  if bld['year'] != "" :
+    if int(bld['year']) >= 1850 :
+      avgs[bld['year'][0:3]+"0"]['values'].append(bld['floors'])
+
+sys.stderr.write("\n")
+for x in avgs:
+  decade = avgs[str(x)]
+  moy = 0
+  max = 0
+  min = 10000
+  for val in decade['values']:
+    if (val.strip() != ""):
+      if int(val) > mask:
+        moy += int(val)
+      else:
+        decade['values'][decade['values'].index(val)] = None
+        continue
+      if int(val) > max:
+        decade['max'] = val
+        max = val
+      if int(val) < min:
+        decade['min'] = val
+        min = val
+    else:
+      decade['values'][decade['values'].index(val)] = None
+  decade['values'] = filter(None, decade['values'])
+  ## std calc
+  if moy != 0:
+    moy = float(moy)/ float(len(decade['values']))
+  std = 0
+  for val in decade['values']:
+    if val != None:
+      if (val.strip() != ""):
+        std += (float(val)-float(moy))**2
+  if len(decade['values']) >0:
+    decade['std'] = (float(std)/len(decade['values']))**(0.5)
+    decade['avg'] = moy
+    decade['values'].sort()
+    decade['med'] = decade['values'][len(decade['values'])/2 ]  
+    decade['sample_size'] = len(decade['values'])
+
+x = time
+sys.stderr.write(normalize("Decade",15)+" | "+normalize("sample size",15)+" | "+normalize("avg", 15)+" | "+normalize("med", 15)+" | "+normalize("std",15)+" | "+normalize("max",15)+" | "+normalize("min",15)+"\n")
+sys.stderr.write("-"*105+"\n")
+while x < 2020:
+  sys.stderr.write(normalize(avgs[str(x)]['decade'],15)+" | ")
+  sys.stderr.write(normalize(avgs[str(x)]['sample_size']+" | ")
+  sys.stderr.write(normalize(str(avgs[str(x)]['avg']),15)+" | ")
+  sys.stderr.write(normalize(avgs[str(x)]['med'],15)+" | ")
+  sys.stderr.write(normalize(avgs[str(x)]['std'],15)+" | ")
+  sys.stderr.write(normalize(avgs[str(x)]['max'],15)+" | ")
+  sys.stderr.write(normalize(avgs[str(x)]['min'],15)+"\n")
+  x += 10
