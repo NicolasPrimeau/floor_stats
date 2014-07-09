@@ -146,11 +146,11 @@ for x in avgs:
 
 x = time
 sys.stderr.write(normalize("Decade",15)+" | "+normalize("sample size",15)+" | "+normalize("avg", 15)+" | "+normalize("med", 15)+" | "+normalize("std",15)+" | "+normalize("max",15)+" | "+normalize("min",15)+"\n")
-sys.stderr.write("-"*105+"\n")
+sys.stderr.write("-"*123+"\n")
 while x < 2020:
   sys.stderr.write(normalize(avgs[str(x)]['decade'],15)+" | ")
-  sys.stderr.write(normalize(avgs[str(x)]['sample_size']+" | ")
-  sys.stderr.write(normalize(str(avgs[str(x)]['avg']),15)+" | ")
+  sys.stderr.write(normalize(avgs[str(x)]['sample_size'], 15)+" | ")
+  sys.stderr.write(normalize(avgs[str(x)]['avg'],15)+" | ")
   sys.stderr.write(normalize(avgs[str(x)]['med'],15)+" | ")
   sys.stderr.write(normalize(avgs[str(x)]['std'],15)+" | ")
   sys.stderr.write(normalize(avgs[str(x)]['max'],15)+" | ")
