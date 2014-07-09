@@ -122,10 +122,10 @@ for x in avgs:
         continue
       if int(val) > max:
         decade['max'] = val
-        max = val
+        max = int(val)
       if int(val) < min:
         decade['min'] = val
-        min = val
+        min = int(val)
     else:
       decade['values'][decade['values'].index(val)] = None
   decade['values'] = filter(None, decade['values'])
